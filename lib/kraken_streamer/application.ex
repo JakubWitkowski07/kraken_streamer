@@ -11,8 +11,8 @@ defmodule KrakenStreamer.Application do
       KrakenStreamerWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:kraken_streamer, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: KrakenStreamer.PubSub},
-      # Start a worker by calling: KrakenStreamer.Worker.start_link(arg)
-      # {KrakenStreamer.Worker, arg},
+      # Start a PairsManager to fetch and manage trading pairs
+      {KrakenStreamer.PairsManager, %{}},
       # Start to serve requests, typically the last entry
       KrakenStreamerWeb.Endpoint
     ]
