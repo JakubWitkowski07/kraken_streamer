@@ -26,6 +26,9 @@ defmodule KrakenStreamer.PairsManager do
           "Successfully fetched #{MapSet.size(ws_names)} tradable pairs. Tradable pairs: #{inspect(ws_names)}"
         )
 
+        # Broadcast the pairs to the WebSocket client
+        Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "pairs:subscription", {:pairs_subscribe, ["BTC/USD", "ETH/USD"]})
+
         schedule_pair_updates()
         {:noreply, %{state | pairs: ws_names}}
 
