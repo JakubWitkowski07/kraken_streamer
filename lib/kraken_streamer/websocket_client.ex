@@ -112,6 +112,46 @@ defmodule KrakenStreamer.WebSocketClient do
         Logger.debug("Pong received")
         {:ok, state}
 
+      # Handle successful subscription messages
+      {:ok,
+       %{
+         "method" => "subscribe",
+         "result" => %{"channel" => "ticker", "symbol" => symbol},
+         "success" => true
+       }} ->
+        Logger.info("Successfully subscribed to #{symbol} pair")
+        {:ok, state}
+
+      # Handle failed subscription messages
+      {:ok,
+       %{
+         "method" => "subscribe",
+         "result" => %{"channel" => "ticker", "symbol" => symbol},
+         "success" => false
+       }} ->
+        Logger.warning("Failed to subscribe to #{symbol} pair")
+        {:ok, state}
+
+      # Handle successful unsubscription messages
+      {:ok,
+       %{
+         "method" => "unsubscribe",
+         "result" => %{"channel" => "ticker", "symbol" => symbol},
+         "success" => true
+       }} ->
+        Logger.info("Successfully unsubscribed from #{symbol} pair")
+        {:ok, state}
+
+      # Handle failed unsubscription messages
+      {:ok,
+       %{
+         "method" => "unsubscribe",
+         "result" => %{"channel" => "ticker", "symbol" => symbol},
+         "success" => false
+       }} ->
+        Logger.warning("Failed to unsubscribe from #{symbol} pair")
+        {:ok, state}
+
       # Handle ticker messages
       {:ok, %{"channel" => "ticker", "type" => _type, "data" => [ticker | _]}} ->
         #Logger.debug("Received ticker message: #{inspect(ticker)}")
@@ -121,7 +161,7 @@ defmodule KrakenStreamer.WebSocketClient do
         state = %{state | tickers: Map.put(state.tickers, symbol, %{ask: ask, bid: bid})}
         {:ok, state}
 
-      # Handle other types of messages
+      # Handle other messages of :text type
       {:ok, other_message} ->
         Logger.debug("Received other WebSocket message: #{inspect(other_message)}")
         {:ok, state}
@@ -131,6 +171,12 @@ defmodule KrakenStreamer.WebSocketClient do
         Logger.error("Failed to decode WebSocket message: #{inspect(error)}")
         {:ok, state}
       end
+  end
+
+  # Handle other types of frames
+  def handle_frame(frame, state) do
+    Logger.debug("Received other frame: #{inspect(frame)}")
+    {:ok, state}
   end
 
   # PRIVATE FUNCTIONS
