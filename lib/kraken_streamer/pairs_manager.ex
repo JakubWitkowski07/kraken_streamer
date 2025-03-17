@@ -4,6 +4,8 @@ defmodule KrakenStreamer.PairsManager do
 
   @kraken_pairs_url "https://api.kraken.com/0/public/AssetPairs"
   @check_interval :timer.minutes(10)
+  @batch_size 250
+  @batch_delay 200
 
   # PUBLIC API
 
@@ -15,22 +17,25 @@ defmodule KrakenStreamer.PairsManager do
 
   def init(_opts) do
     send(self(), :initialize_pairs_set)
-    {:ok, %{pairs: MapSet.new()}}
+    {:ok, %{pairs: MapSet.new(), batches: []}}
   end
 
   # Handles the initial pairs set
   def handle_info(:initialize_pairs_set, state) do
+    Logger.info("Fetching available pairs from Kraken API")
+
     case fetch_pairs_from_api() do
       {:ok, ws_names} ->
         Logger.info(
           "Successfully fetched #{MapSet.size(ws_names)} tradable pairs. Tradable pairs: #{inspect(ws_names)}"
         )
 
-        # Broadcast the pairs to the WebSocket client
-        Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "pairs:subscription", {:pairs_subscribe, ["BTC/USD", "ETH/USD"]})
+        batches =
+          batch_pairs(ws_names)
+          |> subscribe_batches()
 
         schedule_pair_updates()
-        {:noreply, %{state | pairs: ws_names}}
+        {:noreply, %{state | pairs: ws_names, batches: batches}}
 
       {:error, reason} ->
         Logger.error("Error fetching pairs: #{reason}")
@@ -60,8 +65,14 @@ defmodule KrakenStreamer.PairsManager do
               "Successfully fetched #{MapSet.size(updated_pairs)} tradable pairs. Tradable pairs: #{inspect(updated_pairs)}"
             )
 
+            unsubscribe_batches(state.batches)
+
+            batches =
+              batch_pairs(updated_pairs)
+              |> subscribe_batches()
+
             schedule_pair_updates()
-            {:noreply, %{state | pairs: updated_pairs}}
+            {:noreply, %{state | pairs: updated_pairs, batches: batches}}
         end
 
       {:error, reason} ->
@@ -108,5 +119,52 @@ defmodule KrakenStreamer.PairsManager do
   defp schedule_pair_updates do
     Logger.debug("Scheduling next pairs update in #{@check_interval}ms.")
     Process.send_after(self(), :update_pairs, @check_interval)
+  end
+
+  # Batches the pairs into smaller groups.
+  defp batch_pairs(pairs) do
+    pairs
+    |> MapSet.to_list()
+    |> Enum.chunk_every(@batch_size)
+    |> Enum.with_index()
+  end
+
+  # Sends subscription requests for each batch of pairs.
+  defp subscribe_batches(batches) do
+    batches
+    |> Enum.each(fn {batch, idx} ->
+      Phoenix.PubSub.broadcast(
+        KrakenStreamer.PubSub,
+        "pairs:subscription",
+        {:pairs_subscribe, batch}
+      )
+
+      Logger.debug("Broadcasting subscription for batch #{idx + 1} with #{length(batch)} pairs")
+      delay_execution(@batch_delay)
+    end)
+
+    :ok
+  end
+
+  # Sends unsubscription requests for each batch of pairs.
+  defp unsubscribe_batches(batches) do
+    batches
+    |> Enum.each(fn {batch, idx} ->
+      Phoenix.PubSub.broadcast(
+        KrakenStreamer.PubSub,
+        "pairs:subscription",
+        {:pairs_unsubscribe, batch}
+      )
+
+      Logger.debug("Broadcasting unsubscription for batch #{idx + 1} with #{length(batch)} pairs")
+      delay_execution(@batch_delay)
+    end)
+
+    :ok
+  end
+
+  # Helper function to introduce a delay between operations.
+  defp delay_execution(delay) do
+    :timer.sleep(delay)
   end
 end
