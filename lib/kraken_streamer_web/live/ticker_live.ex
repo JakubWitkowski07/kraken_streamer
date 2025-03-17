@@ -1,6 +1,8 @@
 defmodule KrakenStreamerWeb.TickerLive do
   use Phoenix.LiveView
   require Logger
+  alias KrakenStreamer.TickerFormatter
+
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(KrakenStreamer.PubSub, "tickers")
@@ -12,7 +14,15 @@ defmodule KrakenStreamerWeb.TickerLive do
   # This will match any map that comes in (which is your ticker state)
   def handle_info(ticker_state, socket) when is_map(ticker_state) do
     Logger.debug("Ticker state: #{inspect(ticker_state)}")
-    {:noreply, assign(socket, ticker: ticker_state)}
+    # Validate and format tickers
+    case TickerFormatter.validate_and_format_tickers(ticker_state) do
+      {:ok, tickers} ->
+        {:noreply, assign(socket, ticker: tickers)}
+
+      {:error, error} ->
+        Logger.warning("Invalid ticker data: #{inspect(error)}")
+        {:noreply, assign(socket, ticker: ticker_state)}
+    end
   end
 
   def render(assigns) do
