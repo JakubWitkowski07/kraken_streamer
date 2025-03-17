@@ -62,6 +62,9 @@ defmodule KrakenStreamer.TickerFormatter do
 
       iex> validate_and_format_tickers(%{"ETH/USD" => %{ask: "invalid", bid: 1800.0}})
       {:error, "Invalid ticker data: ..."}
+
+      iex> validate_and_format_tickers(["BAD INPUT"])
+      {:error, "Expected map for ticker data, got: \"BAD INPUT\""}
   """
   @spec validate_and_format_tickers(tickers_map()) :: validation_result()
   def validate_and_format_tickers(tickers) when is_map(tickers) do
@@ -109,17 +112,6 @@ defmodule KrakenStreamer.TickerFormatter do
     end
   end
 
-  @doc """
-  Handles validation for non-map inputs.
-
-  ## Parameters
-
-  - `invalid_data`: Any non-map data that was incorrectly passed to the validator
-
-  ## Returns
-
-  - `{:error, reason}` - Error message indicating invalid input type
-  """
   @spec validate_and_format_tickers(term()) :: {:error, String.t()}
   def validate_and_format_tickers(invalid_data) do
     {:error, "Expected map for ticker data, got: #{inspect(invalid_data)}"}
