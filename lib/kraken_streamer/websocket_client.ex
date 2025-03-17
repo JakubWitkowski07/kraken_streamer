@@ -5,7 +5,7 @@ defmodule KrakenStreamer.WebSocketClient do
   @kraken_ws_url "wss://ws.kraken.com/v2"
   # Kraken Docs: Ping should be sent at least every 60 seconds
   @ping_interval :timer.seconds(2)
-
+  @tickers_update_interval :timer.seconds(1)
   # PUBLIC API
 
   def start_link(_opts \\ %{}) do
@@ -20,6 +20,8 @@ defmodule KrakenStreamer.WebSocketClient do
     Phoenix.PubSub.subscribe(KrakenStreamer.PubSub, "pairs:subscription")
     # Schedule a ping to keep the connection alive
     schedule_ping()
+    # Schedule ticker data broadcasts to LiveView
+    schedule_tickers_update()
     {:ok, state}
   end
 
@@ -93,6 +95,16 @@ defmodule KrakenStreamer.WebSocketClient do
     end
   end
 
+  # Broadcasts current ticker data to LiveView components via PubSub.
+  def handle_info(:tickers_update, state) do
+    # Broadcast current ticker data to the LiveView
+    Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", state.tickers)
+    # Schedule the next update
+    schedule_tickers_update()
+    # Return the state unchanged
+    {:ok, state}
+  end
+
   def handle_frame({:text, msg}, state) do
     case Jason.decode(msg) do
       # Handle pong messages
@@ -102,7 +114,7 @@ defmodule KrakenStreamer.WebSocketClient do
 
       # Handle ticker messages
       {:ok, %{"channel" => "ticker", "type" => _type, "data" => [ticker | _]}} ->
-        Logger.debug("Received ticker message: #{inspect(ticker)}")
+        #Logger.debug("Received ticker message: #{inspect(ticker)}")
         symbol = ticker["symbol"]
         ask = ticker["ask"]
         bid = ticker["bid"]
@@ -121,11 +133,13 @@ defmodule KrakenStreamer.WebSocketClient do
       end
   end
 
-
-
   # PRIVATE FUNCTIONS
 
   defp schedule_ping do
     Process.send_after(self(), :ping, @ping_interval)
+  end
+
+  defp schedule_tickers_update do
+    Process.send_after(self(), :tickers_update, @tickers_update_interval)
   end
 end
