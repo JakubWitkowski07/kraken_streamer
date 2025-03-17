@@ -99,6 +99,7 @@ defmodule KrakenStreamer.PairsManager do
               |> Enum.map(fn {_key, pair_data} ->
                 pair_data["wsname"]
               end)
+              |> normalize_pairs()
               |> MapSet.new()
 
             {:ok, ws_names}
@@ -127,6 +128,34 @@ defmodule KrakenStreamer.PairsManager do
     |> MapSet.to_list()
     |> Enum.chunk_every(@batch_size)
     |> Enum.with_index()
+  end
+
+  # Normalizes a single trading pair string.
+  defp normalize_pair(pair) when is_binary(pair) do
+    case String.split(pair, "/") do
+      [base, quote] ->
+        new_base = normalize_symbol(base)
+        new_quote = normalize_symbol(quote)
+        "#{new_base}/#{new_quote}"
+
+      _ ->
+        pair
+    end
+  end
+
+  # Normalizes a single currency symbol.
+  defp normalize_symbol(symbol) do
+    cond do
+      symbol == "XBT" -> "BTC"
+      symbol == "XDG" -> "DOGE"
+      true -> symbol
+    end
+  end
+
+  # Applies normalization to a list of trading pairs.
+  defp normalize_pairs(pairs) when is_list(pairs) do
+    pairs
+    |> Enum.map(&normalize_pair/1)
   end
 
   # Sends subscription requests for each batch of pairs.
