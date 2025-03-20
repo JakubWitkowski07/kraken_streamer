@@ -14,7 +14,7 @@ defmodule KrakenStreamer.Application do
       # Start a WebSocket client to receive ticker data
       {KrakenStreamer.WebSocketClient, %{}},
       # Start a PairsManager to fetch and manage trading pairs
-      {KrakenStreamer.PairsManager, %{}},
+      {KrakenStreamer.Pairs.Manager, %{}},
       # Start to serve requests, typically the last entry
       KrakenStreamerWeb.Endpoint
     ]

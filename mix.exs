@@ -53,7 +53,8 @@ defmodule KrakenStreamer.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:websockex, "~> 0.4.3"},
-      {:httpoison, "~> 2.2"}
+      {:httpoison, "~> 2.2"},
+      {:mox, "~> 1.2", only: :test}
     ]
   end
 
