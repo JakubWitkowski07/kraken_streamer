@@ -20,10 +20,10 @@ defmodule KrakenStreamer.PairsManager do
   """
   use GenServer
   require Logger
+  alias KrakenStreamer.Pairs.{Utilities, Subscription}
 
   @kraken_pairs_url "https://api.kraken.com/0/public/AssetPairs"
   @check_interval :timer.minutes(10)
-  @batch_size 250
   @batch_delay 200
 
   @typedoc """
@@ -91,8 +91,8 @@ defmodule KrakenStreamer.PairsManager do
         )
 
         batches =
-          batch_pairs(ws_names)
-          |> subscribe_batches()
+          Utilities.batch_pairs(ws_names)
+          |> Subscription.subscribe_batches()
 
         schedule_pair_updates()
         {:noreply, %{state | pairs: ws_names, batches: batches}}
@@ -130,11 +130,11 @@ defmodule KrakenStreamer.PairsManager do
               "Successfully fetched #{MapSet.size(updated_pairs)} tradable pairs. Tradable pairs: #{inspect(updated_pairs)}"
             )
 
-            unsubscribe_batches(state.batches)
+            Subscription.unsubscribe_batches(state.batches)
 
             batches =
-              batch_pairs(updated_pairs)
-              |> subscribe_batches()
+              Utilities.batch_pairs(updated_pairs)
+              |> Subscription.subscribe_batches()
 
             schedule_pair_updates()
             {:noreply, %{state | pairs: updated_pairs, batches: batches}}
@@ -165,7 +165,7 @@ defmodule KrakenStreamer.PairsManager do
               |> Enum.map(fn {_key, pair_data} ->
                 pair_data["wsname"]
               end)
-              |> normalize_pairs()
+              |> Utilities.normalize_pairs()
               |> MapSet.new()
 
             {:ok, ws_names}
@@ -187,87 +187,5 @@ defmodule KrakenStreamer.PairsManager do
   defp schedule_pair_updates do
     Logger.debug("Scheduling next pairs update in #{@check_interval}ms.")
     Process.send_after(self(), :update_pairs, @check_interval)
-  end
-
-  # Batches the pairs into smaller groups.
-  @spec batch_pairs(MapSet.t(String.t())) :: [{[String.t()], non_neg_integer()}]
-  defp batch_pairs(pairs) do
-    pairs
-    |> MapSet.to_list()
-    |> Enum.chunk_every(@batch_size)
-    |> Enum.with_index()
-  end
-
-  # Normalizes a single trading pair string.
-  @spec normalize_pair(String.t()) :: String.t()
-  defp normalize_pair(pair) when is_binary(pair) do
-    case String.split(pair, "/") do
-      [base, quote] ->
-        new_base = normalize_symbol(base)
-        new_quote = normalize_symbol(quote)
-        "#{new_base}/#{new_quote}"
-
-      _ ->
-        pair
-    end
-  end
-
-  # Normalizes a single currency symbol.
-  @spec normalize_symbol(String.t()) :: String.t()
-  defp normalize_symbol(symbol) do
-    cond do
-      symbol == "XBT" -> "BTC"
-      symbol == "XDG" -> "DOGE"
-      true -> symbol
-    end
-  end
-
-  # Applies normalization to a list of trading pairs.
-  @spec normalize_pairs([String.t()]) :: [String.t()]
-  defp normalize_pairs(pairs) when is_list(pairs) do
-    pairs
-    |> Enum.map(&normalize_pair/1)
-  end
-
-  # Sends subscription requests for each batch of pairs.
-  @spec subscribe_batches([{[String.t()], non_neg_integer()}]) :: :ok
-  defp subscribe_batches(batches) do
-    batches
-    |> Enum.each(fn {batch, idx} ->
-      Phoenix.PubSub.broadcast(
-        KrakenStreamer.PubSub,
-        "pairs:subscription",
-        {:pairs_subscribe, batch}
-      )
-
-      Logger.debug("Broadcasting subscription for batch #{idx + 1} with #{length(batch)} pairs")
-      delay_execution(@batch_delay)
-    end)
-
-    :ok
-  end
-
-  # Sends unsubscription requests for each batch of pairs.
-  @spec unsubscribe_batches([{[String.t()], non_neg_integer()}]) :: :ok
-  defp unsubscribe_batches(batches) do
-    batches
-    |> Enum.each(fn {batch, idx} ->
-      Phoenix.PubSub.broadcast(
-        KrakenStreamer.PubSub,
-        "pairs:subscription",
-        {:pairs_unsubscribe, batch}
-      )
-
-      Logger.debug("Broadcasting unsubscription for batch #{idx + 1} with #{length(batch)} pairs")
-      delay_execution(@batch_delay)
-    end)
-
-    :ok
-  end
-
-  # Helper function to introduce a delay between operations.
-  @spec delay_execution(non_neg_integer()) :: :ok
-  defp delay_execution(delay) do
-    :timer.sleep(delay)
   end
 end
