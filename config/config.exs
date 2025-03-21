@@ -55,7 +55,7 @@ config :kraken_streamer, KrakenStreamer.KrakenAPI.Client,
   url: "https://api.kraken.com/0/public/AssetPairs"
 
 config :kraken_streamer, KrakenStreamer.Pairs.Manager,
-  check_interval: 1000
+  check_interval: 600_000
 
 config :kraken_streamer, KrakenStreamer.Pairs.Subscription,
   batch_delay: 200
