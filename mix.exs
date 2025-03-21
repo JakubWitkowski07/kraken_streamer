@@ -55,7 +55,8 @@ defmodule KrakenStreamer.MixProject do
       {:websockex, "~> 0.4.3"},
       {:httpoison, "~> 2.2"},
       {:mox, "~> 1.2", only: :test},
-      {:credo, "~> 1.7"}
+      {:credo, "~> 1.7"},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
