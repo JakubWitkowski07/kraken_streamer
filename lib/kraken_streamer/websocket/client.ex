@@ -21,9 +21,9 @@ defmodule KrakenStreamer.WebSocket.Client do
   require Logger
   alias KrakenStreamer.WebSocket.{MessageHandler, TickerFormatter}
 
-  @kraken_ws_url "wss://ws.kraken.com/v2"
-  @ping_interval :timer.seconds(2)
-  @tickers_update_interval :timer.seconds(1)
+  @kraken_ws_url Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[:url]
+  @ping_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[:ping_interval]
+  @tickers_update_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[:tickers_update_interval]
 
   @type ticker :: %{ask: float(), bid: float()}
   @type state :: %{tickers: %{String.t() => ticker()}}

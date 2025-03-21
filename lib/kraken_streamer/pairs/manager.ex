@@ -10,7 +10,7 @@ defmodule KrakenStreamer.Pairs.Manager do
   alias KrakenStreamer.Pairs.{Utilities, Subscription}
   alias KrakenStreamer.KrakenAPI.Client
 
-  @check_interval :timer.minutes(10)
+  @check_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Manager)[:check_interval]
 
   defstruct pairs: MapSet.new(), batches: []
 

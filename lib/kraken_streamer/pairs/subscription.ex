@@ -6,7 +6,7 @@ defmodule KrakenStreamer.Pairs.Subscription do
 
   require Logger
 
-  @batch_delay 200
+  @batch_delay Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Subscription)[:batch_delay]
 
   @doc """
   Subscribes to batches of trading pairs via PubSub.

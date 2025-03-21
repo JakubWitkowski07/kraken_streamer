@@ -8,7 +8,7 @@ defmodule KrakenStreamer.KrakenAPI.Client do
   alias KrakenStreamer.KrakenAPI.HTTPClient
   alias KrakenStreamer.Pairs.Utilities
 
-  @kraken_pairs_url "https://api.kraken.com/0/public/AssetPairs"
+  @kraken_pairs_url Application.compile_env(:kraken_streamer, KrakenStreamer.KrakenAPI.Client)[:url]
 
   @doc """
   Fetches available trading pairs from Kraken API.
