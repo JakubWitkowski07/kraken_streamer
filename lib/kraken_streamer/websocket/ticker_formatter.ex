@@ -12,6 +12,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatter do
   - Medium values (≥0.01): 4 decimal places
   - Small values: up to 10 decimal places for very small numbers
   """
+  require Logger
 
   @typedoc """
   Raw ticker data structure with ask and bid prices
@@ -40,11 +41,12 @@ defmodule KrakenStreamer.WebSocket.TickerFormatter do
   @type validation_result :: {:ok, %{String.t() => formatted_ticker()}} | {:error, String.t()}
 
   @doc """
-  Validates and formats a map of ticker data.
+  Validates all tickers in a map and returns only valid ones.
 
-  Takes a map where keys are ticker symbols and values are maps containing
-  ask and bid prices. Validates the structure and formats the prices with
-  appropriate precision.
+  A ticker is considered valid if:
+  - The symbol is a non-empty string
+  - Both ask and bid prices are numbers
+  - The ticker data structure matches the expected format
 
   ## Parameters
 
@@ -52,119 +54,76 @@ defmodule KrakenStreamer.WebSocket.TickerFormatter do
 
   ## Returns
 
-  - `{:ok, formatted_tickers}` - Validation and formatting successful
-  - `{:error, reason}` - Failed validation with error message
+  - `{:ok, valid_tickers}` - Map containing only valid tickers
+  - `{:error, reason}` - Error message if input is invalid
 
   ## Examples
 
-      iex> validate_and_format_tickers(%{"BTC/USD" => %{ask: 50000.0, bid: 49950.0}})
-      {:ok, %{"BTC/USD" => %{ask: "50000.00", bid: "49950.00"}}}
+      iex> validate_all_tickers(%{"BTC/USD" => %{ask: 50000.0, bid: 49950.0}})
+      {:ok, %{"BTC/USD" => %{ask: 50000.0, bid: 49950.0}}}
 
-      iex> validate_and_format_tickers(%{"ETH/USD" => %{ask: "invalid", bid: 1800.0}})
-      {:error, "Invalid ticker data: ..."}
-
-      iex> validate_and_format_tickers(["BAD INPUT"])
-      {:error, "Expected map for ticker data, got: \"BAD INPUT\""}
+      iex> validate_all_tickers(%{"ETH/USD" => %{ask: "invalid", bid: 1800.0}})
+      {:ok, %{}} # Invalid ticker is filtered out
   """
-  @spec validate_and_format_tickers(tickers_map()) :: validation_result()
-  def validate_and_format_tickers(tickers) when is_map(tickers) do
-    try do
-      formatted_tickers =
-        tickers
-        |> Enum.map(fn {symbol, data} ->
-          # Validate symbol first
-          with true <- is_binary(symbol),
-               true <- symbol != "",
-               true <- is_map(data),
-               ask when not is_nil(ask) <- Map.get(data, :ask),
-               bid when not is_nil(bid) <- Map.get(data, :bid),
-               true <- is_number(ask) and is_number(bid) do
-            # Format the prices using dynamic_format
-            formatted_data = %{
-              ask: convert_to_float(ask) |> dynamic_format(),
-              bid: convert_to_float(bid) |> dynamic_format()
-            }
+  @spec validate_all_tickers(tickers_map()) :: {:ok, tickers_map()} | {:error, String.t()}
+  def validate_all_tickers(tickers) when is_map(tickers) do
+    valid_tickers =
+      Enum.filter(tickers, &validate_ticker/1)
+      |> Map.new()
 
-            {symbol, formatted_data}
-          else
-            false when not is_binary(symbol) ->
-              raise "Symbol must be a string, got: #{inspect(symbol)}"
+    {:ok, valid_tickers}
+  end
 
-            false when symbol == "" ->
-              raise "Symbol cannot be empty"
+  def validate_all_tickers(invalid_data) do
+    Logger.error("Invalid tickers data during validation: #{inspect(invalid_data)}")
+  end
 
-            nil ->
-              raise "Missing ask or bid value for #{inspect(symbol)}"
-
-            false ->
-              raise "Invalid data type for #{inspect(symbol)}: #{inspect(data)}"
-
-            value ->
-              raise "Invalid value in ticker data: #{inspect(value)}"
-          end
-        end)
-        |> Map.new()
-
-      {:ok, formatted_tickers}
-    rescue
-      e ->
-        {:error, "Invalid ticker data: #{Exception.message(e)}"}
+  # Validates a single ticker.
+  @doc false
+  @spec validate_ticker({String.t(), raw_ticker()}) :: boolean()
+  defp validate_ticker({symbol, %{ask: ask, bid: bid}}) do
+    with {:ok, _symbol} <- validate_symbol(symbol),
+         {:ok, _ask} <- validate_price(ask),
+         {:ok, _bid} <- validate_price(bid) do
+      true
+    else
+      {:error, reason} ->
+        Logger.error("Invalid ticker data: #{reason}")
+        false
     end
   end
 
-  @spec validate_and_format_tickers(term()) :: {:error, String.t()}
-  def validate_and_format_tickers(invalid_data) do
-    {:error, "Expected map for ticker data, got: #{inspect(invalid_data)}"}
+  defp validate_ticker(invalid_data) do
+    Logger.error("Invalid ticker data: #{inspect(invalid_data)}")
+    false
   end
 
-  @doc """
-  Converts various data types to float for consistent handling.
-
-  ## Parameters
-
-  - `value`: A value that needs to be converted to float
-
-  ## Returns
-
-  - A float value if conversion is possible
-  - `nil` if conversion fails
-
-  ## Examples
-
-      iex> convert_to_float(123)
-      123.0
-
-      iex> convert_to_float("45.67")
-      45.67
-
-      iex> convert_to_float("invalid")
-      nil
-  """
-  @spec convert_to_float(float()) :: float()
-  def convert_to_float(value) when is_float(value), do: value
-
-  @spec convert_to_float(integer()) :: float()
-  def convert_to_float(value) when is_integer(value), do: value * 1.0
-
-  @spec convert_to_float(String.t()) :: float() | nil
-  def convert_to_float(value) when is_binary(value) do
-    case Float.parse(value) do
-      {num, ""} -> num
-      _ -> nil
+  # Validates the symbol of a ticker.
+  @doc false
+  @spec validate_symbol(term()) :: {:ok, String.t()} | {:error, String.t()}
+  defp validate_symbol(symbol) do
+    if is_binary(symbol) and symbol != "" do
+      {:ok, symbol}
+    else
+      {:error, "Invalid symbol: #{inspect(symbol)}"}
     end
   end
 
-  @spec convert_to_float(term()) :: nil
-  def convert_to_float(_), do: nil
+  # Validates the price of a ticker.
+  @doc false
+  @spec validate_price(term()) :: {:ok, number()} | {:error, String.t()}
+  defp validate_price(price) do
+    if is_number(price) do
+      {:ok, price}
+    else
+      {:error, "Invalid price: #{inspect(price)}"}
+    end
+  end
 
   @doc """
-  Formats floating point values with dynamic precision based on magnitude.
+  Formats all tickers in a map with appropriate precision.
 
-  Larger values get fewer decimal places, while smaller values get more
-  decimal places to maintain readability.
-
-  ## Precision Rules
-
+  Takes a map of tickers and formats their prices according to the following rules:
   - Values ≥ 1: 2 decimal places
   - Values ≥ 0.01: 4 decimal places
   - Values ≥ 0.0001: 6 decimal places
@@ -173,22 +132,65 @@ defmodule KrakenStreamer.WebSocket.TickerFormatter do
 
   ## Parameters
 
-  - `value`: The float value to format
+  - `tickers`: Map of ticker symbols to their data (ask/bid prices)
 
   ## Returns
 
-  - Formatted string with appropriate precision
+  - `{:ok, formatted_tickers}` - Map with formatted price strings
+  - `{:error, reason}` - Error message if formatting fails
 
   ## Examples
 
-      iex> dynamic_format(1234.5678)
-      "1234.57"
+      iex> format_all_tickers(%{"BTC/USD" => %{ask: 50000.0, bid: 49950.0}})
+      {:ok, %{"BTC/USD" => %{ask: "50000.00", bid: "49950.00"}}}
 
-      iex> dynamic_format(0.00345678)
-      "0.003457"
+      iex> format_all_tickers(%{"ETH/USD" => %{ask: 0.00345678, bid: 0.00345}})
+      {:ok, %{"ETH/USD" => %{ask: "0.003457", bid: "0.003450"}}}
   """
+  @spec format_all_tickers(tickers_map()) :: validation_result()
+  def format_all_tickers(tickers) when is_map(tickers) do
+    formatted_tickers =
+      Enum.map(tickers, &format_ticker/1)
+      |> Map.new()
+
+    {:ok, formatted_tickers}
+  end
+
+  def format_all_tickers(invalid_data) do
+    Logger.error("Invalid tickers data during formatting: #{inspect(invalid_data)}")
+  end
+
+  # Formats a single ticker with appropriate precision.
+  @doc false
+  @spec format_ticker({String.t(), raw_ticker()}) :: {String.t(), formatted_ticker()}
+  defp format_ticker({symbol, %{ask: ask, bid: bid}}) do
+    {symbol,
+     %{
+       ask: convert_to_float(ask) |> dynamic_format(),
+       bid: convert_to_float(bid) |> dynamic_format()
+     }}
+  end
+
+  # Converts various data types to float for consistent handling.
+  @doc false
+  @spec convert_to_float(number() | String.t() | term()) :: float() | nil
+  defp convert_to_float(value) when is_float(value), do: value
+  defp convert_to_float(value) when is_integer(value), do: value * 1.0
+
+  defp convert_to_float(value) when is_binary(value) do
+    case Float.parse(value) do
+      {num, ""} -> num
+      _ -> nil
+    end
+  end
+
+  defp convert_to_float(_), do: nil
+
+
+  # Formats floating point values with dynamic precision based on magnitude.
+  @doc false
   @spec dynamic_format(float()) :: String.t()
-  def dynamic_format(value) when is_float(value) do
+  defp dynamic_format(value) when is_float(value) do
     # Determine precision
     precision =
       cond do

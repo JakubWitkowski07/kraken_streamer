@@ -133,20 +133,33 @@ defmodule KrakenStreamer.WebSocket.Client do
   # Automatically schedules the next update.
   @spec handle_info(:tickers_update, state()) :: {:ok, state()}
   def handle_info(:tickers_update, state) do
-    # Validate and format tickers
-    case TickerFormatter.validate_and_format_tickers(state.tickers) do
-      {:ok, formatted_tickers} ->
+    with {:ok, tickers} <- TickerFormatter.validate_all_tickers(state.tickers),
+         {:ok, formatted_tickers} <- TickerFormatter.format_all_tickers(tickers) do
         # Broadcast current ticker data to the LiveView
         Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", formatted_tickers)
         # Schedule the next update
         schedule_tickers_update()
         # Return the state unchanged
         {:ok, state}
+      else
+        _ ->
+          Logger.error("Failed to validate and format tickers.")
+          {:ok, state}
+      end
+    # Validate and format tickers
+    # case TickerFormatter.validate_and_format_tickers(state.tickers) do
+    #   {:ok, formatted_tickers} ->
+    #     # Broadcast current ticker data to the LiveView
+    #     Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", formatted_tickers)
+    #     # Schedule the next update
+    #     schedule_tickers_update()
+    #     # Return the state unchanged
+    #     {:ok, state}
 
-      {:error, error} ->
-        Logger.error("Failed to validate and format tickers: #{inspect(error)}")
-        {:ok, state}
-    end
+    #   {:error, error} ->
+    #     Logger.error("Failed to validate and format tickers: #{inspect(error)}")
+    #     {:ok, state}
+    # end
   end
 
   # Processes incoming WebSocket frames using MessageHandler.
