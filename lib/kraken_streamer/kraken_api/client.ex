@@ -27,14 +27,7 @@ defmodule KrakenStreamer.KrakenAPI.Client do
         case Jason.decode(body) do
           {:ok, %{"result" => result}} ->
             # Retrieve only the wsname from the result to collect all pairs in format "BTC/USD"
-            ws_names =
-              result
-              |> Enum.map(fn {_key, pair_data} ->
-                pair_data["wsname"]
-              end)
-              |> Utilities.normalize_pairs()
-              |> MapSet.new()
-
+            ws_names = extract_ws_names(result)
             {:ok, ws_names}
 
           {:error, reason} ->
@@ -47,5 +40,17 @@ defmodule KrakenStreamer.KrakenAPI.Client do
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, "HTTP request failed: #{inspect(reason)}"}
     end
+  end
+
+  # Extracts the wsname from the result to collect all pairs in format "BTC/USD"
+  @doc false
+  @spec extract_ws_names(map()) :: MapSet.t(String.t())
+  defp extract_ws_names(result) do
+    result
+      |> Enum.map(fn {_key, pair_data} ->
+        pair_data["wsname"]
+      end)
+      |> Utilities.normalize_pairs()
+      |> MapSet.new()
   end
 end

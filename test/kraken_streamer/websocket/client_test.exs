@@ -96,7 +96,7 @@ defmodule KrakenStreamer.WebSocket.ClientTest do
       state_with_tickers = %{
         state
         | tickers: %{
-            "BTC/USD" => %{ask: 50000.0, bid: 49900.0},
+            "BTC/USD" => %{ask: 50_000.0, bid: 49_900.0},
             "ETH/USD" => %{ask: 2000.0, bid: 1990.0}
           }
       }

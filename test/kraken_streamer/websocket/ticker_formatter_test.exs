@@ -5,7 +5,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
   describe "validate_and_format_tickers/1" do
     test "successfully formats valid ticker data" do
       tickers = %{
-        "BTC/USD" => %{ask: 50000.0, bid: 49900.0}
+        "BTC/USD" => %{ask: 50_000.0, bid: 49_900.0}
       }
 
       assert {:ok, formatted} = TickerFormatter.validate_and_format_tickers(tickers)
@@ -14,7 +14,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "formats multiple pairs" do
       tickers = %{
-        "BTC/USD" => %{ask: 50000.0, bid: 49900.0},
+        "BTC/USD" => %{ask: 50_000.0, bid: 49_900.0},
         "ETH/USD" => %{ask: 2000.0, bid: 1990.0}
       }
 
@@ -55,7 +55,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "returns error for non-string symbol" do
       tickers = %{
-        123 => %{ask: 50000.0, bid: 49900.0}
+        123 => %{ask: 50_000.0, bid: 49_900.0}
       }
 
       assert {:error, message} = TickerFormatter.validate_and_format_tickers(tickers)
@@ -64,7 +64,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "returns error for empty symbol" do
       tickers = %{
-        "" => %{ask: 50000.0, bid: 49900.0}
+        "BTC/USD" => %{ask: 50_000.0, bid: 49_900.0}
       }
 
       assert {:error, message} = TickerFormatter.validate_and_format_tickers(tickers)
@@ -73,7 +73,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "returns error for missing ask price" do
       tickers = %{
-        "BTC/USD" => %{bid: 49900.0}
+        "BTC/USD" => %{bid: 49_900.0}
       }
 
       assert {:error, message} = TickerFormatter.validate_and_format_tickers(tickers)
@@ -82,7 +82,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "returns error for missing bid price" do
       tickers = %{
-        "BTC/USD" => %{ask: 50000.0}
+        "BTC/USD" => %{ask: 50_000.0}
       }
 
       assert {:error, message} = TickerFormatter.validate_and_format_tickers(tickers)
@@ -91,7 +91,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "returns error for invalid ask price" do
       tickers = %{
-        "BTC/USD" => %{ask: "invalid", bid: 49900.0}
+        "BTC/USD" => %{ask: "invalid", bid: 49_900.0}
       }
 
       assert {:error, message} = TickerFormatter.validate_and_format_tickers(tickers)
@@ -100,7 +100,7 @@ defmodule KrakenStreamer.WebSocket.TickerFormatterTest do
 
     test "returns error for invalid bid price" do
       tickers = %{
-        "BTC/USD" => %{ask: 50000.0, bid: "invalid"}
+        "BTC/USD" => %{ask: 50_000.0, bid: "invalid"}
       }
 
       assert {:error, message} = TickerFormatter.validate_and_format_tickers(tickers)
