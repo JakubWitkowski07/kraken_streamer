@@ -1,4 +1,4 @@
-defmodule KrakenStreamer.TickerFormatter do
+defmodule KrakenStreamer.WebSocket.TickerFormatter do
   @moduledoc """
   Provides functionality for validating and formatting ticker data from cryptocurrency exchanges.
 

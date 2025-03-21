@@ -12,7 +12,7 @@ defmodule KrakenStreamer.Application do
       {DNSCluster, query: Application.get_env(:kraken_streamer, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: KrakenStreamer.PubSub},
       # Start a WebSocket client to receive ticker data
-      {KrakenStreamer.WebSocketClient, %{}},
+      {KrakenStreamer.WebSocket.Client, %{}},
       # Start a PairsManager to fetch and manage trading pairs
       {KrakenStreamer.Pairs.Manager, %{}},
       # Start to serve requests, typically the last entry
