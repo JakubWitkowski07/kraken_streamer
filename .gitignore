@@ -35,3 +35,6 @@ kraken_streamer-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Docker
+.docker/
+docker-compose.override.yml

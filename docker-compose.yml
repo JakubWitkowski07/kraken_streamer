@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4000"
+    environment:
+      - PORT=4000
+      - PHX_HOST=localhost
+      - SECRET_KEY_BASE= # put your generated key here
+    restart: unless-stopped

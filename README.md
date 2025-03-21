@@ -7,6 +7,24 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
+## Docker Deployment
+
+To run the application using Docker:
+
+1. Generate a new secret key base:
+   ```bash
+   mix phx.gen.secret
+   ```
+
+2. Update the "SECRET_KEY_BASE" in docker-compose.yml with generated key.
+
+3. Build and start the application:
+   ```bash
+   docker-compose up --build
+   ```
+
+The application will be available at http://localhost:8080
+
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
 
 ## Learn more
