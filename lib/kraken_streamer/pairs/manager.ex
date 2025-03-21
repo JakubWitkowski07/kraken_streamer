@@ -1,4 +1,9 @@
 defmodule KrakenStreamer.Pairs.Manager do
+  @moduledoc """
+  Manages trading pairs for the Kraken WebSocket connection.
+  Periodically fetches available pairs and maintains subscriptions.
+  """
+
   use GenServer
   require Logger
 
@@ -9,16 +14,29 @@ defmodule KrakenStreamer.Pairs.Manager do
 
   defstruct pairs: MapSet.new(), batches: []
 
+  @type t :: %__MODULE__{
+          pairs: MapSet.t(String.t()),
+          batches: [{[String.t()], non_neg_integer()}]
+        }
+
+  @doc """
+  Starts the pairs manager process.
+  """
+  @spec start_link(map()) :: GenServer.on_start()
   def start_link(opts \\ %{}) do
     name = Map.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  @doc false
+  @impl true
   def init(_opts) do
     send(self(), :initialize_pairs_set)
     {:ok, %__MODULE__{}}
   end
 
+  @doc false
+  @impl true
   def handle_info(:initialize_pairs_set, state) do
     Logger.info("Fetching available pairs from Kraken API")
 
@@ -43,6 +61,8 @@ defmodule KrakenStreamer.Pairs.Manager do
     end
   end
 
+  @doc false
+  @impl true
   def handle_info(:update_pairs, state) do
     Logger.info("Checking for pairs updates")
 

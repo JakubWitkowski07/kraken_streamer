@@ -1,10 +1,23 @@
 defmodule KrakenStreamer.KrakenAPI.Client do
+  @moduledoc """
+  Client for interacting with the Kraken API.
+  Fetches available trading pairs and normalizes them to a standard format.
+  """
+
   require Logger
   alias KrakenStreamer.KrakenAPI.HTTPClient
   alias KrakenStreamer.Pairs.Utilities
 
   @kraken_pairs_url "https://api.kraken.com/0/public/AssetPairs"
 
+  @doc """
+  Fetches available trading pairs from Kraken API.
+  Returns normalized pairs in format "BTC/USD".
+
+  ## Returns
+    * `{:ok, pairs}` - Set of available trading pairs
+    * `{:error, reason}` - Error message if request fails
+  """
   @spec fetch_pairs_from_api() :: {:ok, MapSet.t(String.t())} | {:error, String.t()}
   def fetch_pairs_from_api() do
     Logger.debug("Fetching pairs from Kraken API: #{@kraken_pairs_url}")
