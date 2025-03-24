@@ -41,7 +41,7 @@ defmodule KrakenStreamer.Pairs.ManagerTest do
 
       # Start the Manager with unique name
       {:ok, pid} = Manager.start_link(%{name: test_name})
-
+      Manager.initialize_pairs_set(pid)
       # Give it some time to process the initialization message
       Process.sleep(100)
 
@@ -57,6 +57,7 @@ defmodule KrakenStreamer.Pairs.ManagerTest do
       end)
 
       {:ok, pid} = Manager.start_link(%{name: test_name})
+      Manager.initialize_pairs_set(pid)
       Process.sleep(100)
 
       state = :sys.get_state(pid)
@@ -85,6 +86,7 @@ defmodule KrakenStreamer.Pairs.ManagerTest do
       end)
 
       {:ok, pid} = Manager.start_link(%{name: test_name})
+      Manager.initialize_pairs_set(pid)
       Process.sleep(100)
 
       # Trigger update manually instead of waiting for the interval
@@ -132,6 +134,7 @@ defmodule KrakenStreamer.Pairs.ManagerTest do
       end)
 
       {:ok, pid} = Manager.start_link(%{name: test_name})
+      Manager.initialize_pairs_set(pid)
       Process.sleep(100)
 
       # Initial state should have original pairs
@@ -172,6 +175,7 @@ defmodule KrakenStreamer.Pairs.ManagerTest do
       end)
 
       {:ok, pid} = Manager.start_link(%{name: test_name})
+      Manager.initialize_pairs_set(pid)
       Process.sleep(100)
 
       initial_state = :sys.get_state(pid)

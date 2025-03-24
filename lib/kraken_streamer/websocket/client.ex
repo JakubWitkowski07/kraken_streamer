@@ -20,10 +20,16 @@ defmodule KrakenStreamer.WebSocket.Client do
   use WebSockex
   require Logger
   alias KrakenStreamer.WebSocket.{MessageHandler, TickerFormatter}
+  alias KrakenStreamer.Pairs.Manager
 
   @kraken_ws_url Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[:url]
-  @ping_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[:ping_interval]
-  @tickers_update_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[:tickers_update_interval]
+  @ping_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Websocket.Client)[
+                   :ping_interval
+                 ]
+  @tickers_update_interval Application.compile_env(
+                             :kraken_streamer,
+                             KrakenStreamer.Websocket.Client
+                           )[:tickers_update_interval]
 
   @type ticker :: %{ask: float(), bid: float()}
   @type state :: %{tickers: %{String.t() => ticker()}}
@@ -51,10 +57,12 @@ defmodule KrakenStreamer.WebSocket.Client do
   Sets up PubSub subscriptions and schedules periodic tasks.
   """
   @spec handle_connect(map(), state()) :: {:ok, state()}
-  def handle_connect(_conn, state) do
+  def handle_connect(conn, state) do
     Logger.info("Connected to Kraken WebSocket server")
     # Subscribe to pair updates from PairsManager
     Phoenix.PubSub.subscribe(KrakenStreamer.PubSub, "pairs:subscription")
+    # Initialize pairs set
+    Manager.initialize_pairs_set()
     # Schedule a ping to keep the connection alive
     schedule_ping()
     # Schedule ticker data broadcasts to LiveView
@@ -65,7 +73,10 @@ defmodule KrakenStreamer.WebSocket.Client do
   # Handles WebSocket disconnection by attempting to reconnect.
   @spec handle_disconnect(map(), state()) :: {:reconnect, state()}
   def handle_disconnect(%{reason: reason}, state) do
-    Logger.debug("Disconnected from Kraken WebSocket server: #{inspect(reason)}")
+    Logger.info("Disconnected from Kraken WebSocket server: #{inspect(reason)}")
+    # Unsubscribe from pair updates from PairsManager to avoid duplicating
+    # subscriptions when reconnecting
+    Phoenix.PubSub.unsubscribe(KrakenStreamer.PubSub, "pairs:subscription")
     # Reconnect automatically
     {:reconnect, state}
   end
@@ -135,17 +146,18 @@ defmodule KrakenStreamer.WebSocket.Client do
   def handle_info(:tickers_update, state) do
     with {:ok, tickers} <- TickerFormatter.validate_all_tickers(state.tickers),
          {:ok, formatted_tickers} <- TickerFormatter.format_all_tickers(tickers) do
-        # Broadcast current ticker data to the LiveView
-        Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", formatted_tickers)
-        # Schedule the next update
-        schedule_tickers_update()
-        # Return the state unchanged
+      # Broadcast current ticker data to the LiveView
+      Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", formatted_tickers)
+      # Schedule the next update
+      schedule_tickers_update()
+      # Return the state unchanged
+      {:ok, state}
+    else
+      _ ->
+        Logger.error("Failed to validate and format tickers.")
         {:ok, state}
-      else
-        _ ->
-          Logger.error("Failed to validate and format tickers.")
-          {:ok, state}
-      end
+    end
+
     # Validate and format tickers
     # case TickerFormatter.validate_and_format_tickers(state.tickers) do
     #   {:ok, formatted_tickers} ->

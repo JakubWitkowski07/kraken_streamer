@@ -28,16 +28,23 @@ defmodule KrakenStreamer.Pairs.Manager do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  @doc """
+  Initializes first pairs set and schedules pair updates.
+  """
+  @spec initialize_pairs_set(GenServer.server()) :: :ok
+  def initialize_pairs_set(server \\ __MODULE__) do
+    GenServer.cast(server, :initialize_pairs_set)
+  end
+
   @doc false
   @impl true
   def init(_opts) do
-    send(self(), :initialize_pairs_set)
     {:ok, %__MODULE__{}}
   end
 
   @doc false
   @impl true
-  def handle_info(:initialize_pairs_set, state) do
+  def handle_cast(:initialize_pairs_set, state) do
     Logger.info("Fetching available pairs from Kraken API")
 
     case Client.fetch_pairs_from_api() do
