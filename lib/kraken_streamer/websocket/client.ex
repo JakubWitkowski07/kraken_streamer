@@ -57,7 +57,7 @@ defmodule KrakenStreamer.WebSocket.Client do
   Sets up PubSub subscriptions and schedules periodic tasks.
   """
   @spec handle_connect(map(), state()) :: {:ok, state()}
-  def handle_connect(conn, state) do
+  def handle_connect(_conn, state) do
     Logger.info("Connected to Kraken WebSocket server")
     # Subscribe to pair updates from PairsManager
     Phoenix.PubSub.subscribe(KrakenStreamer.PubSub, "pairs:subscription")
@@ -77,7 +77,7 @@ defmodule KrakenStreamer.WebSocket.Client do
     # Unsubscribe from pair updates from PairsManager to avoid duplicating
     # subscriptions when reconnecting
     Phoenix.PubSub.unsubscribe(KrakenStreamer.PubSub, "pairs:subscription")
-    # Reconnect automatically
+
     {:reconnect, state}
   end
 
@@ -86,7 +86,7 @@ defmodule KrakenStreamer.WebSocket.Client do
   @spec handle_info({:pairs_subscribe, [String.t()]}, state()) ::
           {:reply, {:text, String.t()}, state()} | {:ok, state()}
   def handle_info({:pairs_subscribe, pairs}, state) do
-    Logger.debug("Subscribing to Kraken WebSocket server pairs: #{inspect(pairs)}")
+    Logger.info("Subscribing to Kraken WebSocket server pairs: #{inspect(pairs)}")
 
     subscribe_message = %{
       "method" => "subscribe",
@@ -112,7 +112,7 @@ defmodule KrakenStreamer.WebSocket.Client do
   @spec handle_info({:pairs_unsubscribe, [String.t()]}, state()) ::
           {:reply, {:text, String.t()}, state()} | {:ok, state()}
   def handle_info({:pairs_unsubscribe, pairs}, state) do
-    Logger.debug("Unsubscribing from Kraken WebSocket server pairs: #{inspect(pairs)}")
+    Logger.info("Unsubscribing from Kraken WebSocket server pairs: #{inspect(pairs)}")
 
     unsubscribe_message = %{
       "method" => "unsubscribe",
@@ -150,28 +150,13 @@ defmodule KrakenStreamer.WebSocket.Client do
       Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", formatted_tickers)
       # Schedule the next update
       schedule_tickers_update()
-      # Return the state unchanged
+
       {:ok, state}
     else
       _ ->
         Logger.error("Failed to validate and format tickers.")
         {:ok, state}
     end
-
-    # Validate and format tickers
-    # case TickerFormatter.validate_and_format_tickers(state.tickers) do
-    #   {:ok, formatted_tickers} ->
-    #     # Broadcast current ticker data to the LiveView
-    #     Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, "tickers", formatted_tickers)
-    #     # Schedule the next update
-    #     schedule_tickers_update()
-    #     # Return the state unchanged
-    #     {:ok, state}
-
-    #   {:error, error} ->
-    #     Logger.error("Failed to validate and format tickers: #{inspect(error)}")
-    #     {:ok, state}
-    # end
   end
 
   # Processes incoming WebSocket frames using MessageHandler.
@@ -189,15 +174,11 @@ defmodule KrakenStreamer.WebSocket.Client do
 
     case Jason.encode(ping_msg) do
       {:ok, payload} ->
-        # Schedule next ping
         schedule_ping()
-        # Send the ping
-        Logger.debug("Sending ping")
         {:reply, {:text, payload}, state}
 
       {:error, error} ->
         Logger.error("Failed to encode ping message: #{inspect(error)}")
-        # Schedule next ping even on error
         schedule_ping()
         {:ok, state}
     end

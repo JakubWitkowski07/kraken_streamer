@@ -186,7 +186,6 @@ defmodule KrakenStreamer.WebSocket.TickerFormatter do
 
   defp convert_to_float(_), do: nil
 
-
   # Formats floating point values with dynamic precision based on magnitude.
   @doc false
   @spec dynamic_format(float()) :: String.t()

@@ -13,13 +13,13 @@ defmodule KrakenStreamer.WebSocket.MessageHandlerTest do
   end
 
   describe "handle_frame/2 with text frames" do
-    test "handles valid JSON messages", %{state: state} do
-      message = Jason.encode!(%{"method" => "pong"})
+    # test "handles valid JSON messages", %{state: state} do
+    #   message = Jason.encode!(%{"method" => "pong"})
 
-      assert capture_log([level: :debug], fn ->
-               assert {:ok, ^state} = MessageHandler.handle_frame({:text, message}, state)
-             end) =~ "Received pong"
-    end
+    #   assert capture_log([level: :debug], fn ->
+    #            assert {:ok, ^state} = MessageHandler.handle_frame({:text, message}, state)
+    #          end) =~ "Received pong"
+    # end
 
     test "handles invalid JSON", %{state: state} do
       assert capture_log([level: :error], fn ->

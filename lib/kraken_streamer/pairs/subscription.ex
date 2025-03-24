@@ -6,7 +6,9 @@ defmodule KrakenStreamer.Pairs.Subscription do
 
   require Logger
 
-  @batch_delay Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Subscription)[:batch_delay]
+  @batch_delay Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Subscription)[
+                 :batch_delay
+               ]
 
   @doc """
   Subscribes to batches of trading pairs via PubSub.
@@ -26,10 +28,9 @@ defmodule KrakenStreamer.Pairs.Subscription do
 
   def subscribe_batches(batches, topic) when is_list(batches) and length(batches) > 0 do
     batches
-    |> Enum.each(fn {batch, idx} ->
+    |> Enum.each(fn {batch, _idx} ->
       Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, topic, {:pairs_subscribe, batch})
 
-      Logger.debug("Broadcasting subscription for batch #{idx + 1} with #{length(batch)} pairs")
       delay_execution(@batch_delay)
     end)
 
@@ -58,10 +59,9 @@ defmodule KrakenStreamer.Pairs.Subscription do
 
   def unsubscribe_batches(batches, topic) when is_list(batches) and length(batches) > 0 do
     batches
-    |> Enum.each(fn {batch, idx} ->
+    |> Enum.each(fn {batch, _idx} ->
       Phoenix.PubSub.broadcast(KrakenStreamer.PubSub, topic, {:pairs_unsubscribe, batch})
 
-      Logger.debug("Broadcasting unsubscription for batch #{idx + 1} with #{length(batch)} pairs")
       delay_execution(@batch_delay)
     end)
 

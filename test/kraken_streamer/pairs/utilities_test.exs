@@ -24,8 +24,10 @@ defmodule KrakenStreamer.Pairs.UtilitiesTest do
       batched = Utilities.batch_pairs(pairs)
 
       assert length(batched) == 2
-      assert length(elem(List.first(batched), 0)) == 250  # First batch full
-      assert length(elem(List.last(batched), 0)) == 50    # Second batch partial
+      # First batch full
+      assert length(elem(List.first(batched), 0)) == 250
+      # Second batch partial
+      assert length(elem(List.last(batched), 0)) == 50
     end
   end
 

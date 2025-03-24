@@ -54,14 +54,11 @@ config :phoenix, :json_library, Jason
 config :kraken_streamer, KrakenStreamer.KrakenAPI.Client,
   url: "https://api.kraken.com/0/public/AssetPairs"
 
-config :kraken_streamer, KrakenStreamer.Pairs.Manager,
-  check_interval: 600_000
+config :kraken_streamer, KrakenStreamer.Pairs.Manager, check_interval: 600_000
 
-config :kraken_streamer, KrakenStreamer.Pairs.Subscription,
-  batch_delay: 200
+config :kraken_streamer, KrakenStreamer.Pairs.Subscription, batch_delay: 200
 
-config :kraken_streamer, KrakenStreamer.Pairs.Utilities,
-  batch_size: 250
+config :kraken_streamer, KrakenStreamer.Pairs.Utilities, batch_size: 250
 
 config :kraken_streamer, KrakenStreamer.Websocket.Client,
   url: "wss://ws.kraken.com/v2",

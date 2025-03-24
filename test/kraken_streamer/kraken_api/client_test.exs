@@ -5,7 +5,7 @@ defmodule KrakenStreamer.KrakenAPI.ClientTest do
   alias KrakenStreamer.KrakenAPI.Client
 
   setup :verify_on_exit!
-  
+
   describe "fetch_pairs_from_api" do
     test "successfully fetches and processes pairs" do
       # Create the JSON content.
@@ -39,7 +39,6 @@ defmodule KrakenStreamer.KrakenAPI.ClientTest do
 
       # Convert the returned list of pairs into a MapSet for assertions.
       pairs_set = MapSet.new(pairs)
-
 
       assert MapSet.member?(pairs_set, "BTC/USD")
       assert MapSet.member?(pairs_set, "ETH/USD")

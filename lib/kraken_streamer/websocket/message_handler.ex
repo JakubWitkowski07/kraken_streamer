@@ -96,7 +96,6 @@ defmodule KrakenStreamer.WebSocket.MessageHandler do
   @doc false
   @spec handle_message(%{String.t() => String.t()}, state()) :: handler_response()
   defp handle_message(%{"method" => "pong"}, state) do
-    Logger.debug("Received pong")
     {:ok, state}
   end
 
@@ -154,7 +153,6 @@ defmodule KrakenStreamer.WebSocket.MessageHandler do
     end
   end
 
-
   # Handles ticker update messages
   @doc false
   @spec handle_message(
@@ -194,7 +192,7 @@ defmodule KrakenStreamer.WebSocket.MessageHandler do
   @doc false
   @spec handle_message(map(), state()) :: handler_response()
   defp handle_message(msg, state) do
-    Logger.debug("Received unhandled message type: #{inspect(msg)}")
+    Logger.info("Received unhandled message type: #{inspect(msg)}")
     {:ok, state}
   end
 end

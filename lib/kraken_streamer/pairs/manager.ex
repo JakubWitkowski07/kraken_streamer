@@ -10,7 +10,9 @@ defmodule KrakenStreamer.Pairs.Manager do
   alias KrakenStreamer.Pairs.{Utilities, Subscription}
   alias KrakenStreamer.KrakenAPI.Client
 
-  @check_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Manager)[:check_interval]
+  @check_interval Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Manager)[
+                    :check_interval
+                  ]
 
   defstruct pairs: MapSet.new(), batches: []
 
@@ -62,7 +64,7 @@ defmodule KrakenStreamer.Pairs.Manager do
 
       {:error, reason} ->
         Logger.error("Error fetching pairs: #{reason}")
-        # Schedule a retry sooner on error
+
         Process.send_after(self(), :initialize_pairs_set, :timer.minutes(5))
         {:noreply, state}
     end
@@ -98,14 +100,13 @@ defmodule KrakenStreamer.Pairs.Manager do
 
       {:error, reason} ->
         Logger.error("Error fetching pairs: #{reason}")
-        # Schedule a retry sooner on error
+
         Process.send_after(self(), :update_pairs, :timer.seconds(30))
         {:noreply, state}
     end
   end
 
   defp schedule_pair_updates do
-    Logger.debug("Scheduling next pairs update in #{@check_interval}ms.")
     Process.send_after(self(), :update_pairs, @check_interval)
   end
 end

@@ -8,7 +8,6 @@ defmodule KrakenStreamer.Pairs.ManagerTest do
   setup :set_mox_global
   setup :verify_on_exit!
 
-
   setup do
     # Sample test data
     test_pairs = MapSet.new(["BTC/USD", "ETH/USD"])

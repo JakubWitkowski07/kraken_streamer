@@ -5,7 +5,7 @@ To start your Phoenix server:
   * Run `mix setup` to install and setup dependencies
   * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+Now you can visit [`localhost:4000/tickers`](http://localhost:4000/tickers) from your browser.
 
 ## Docker Deployment
 
@@ -23,7 +23,7 @@ To run the application using Docker:
    docker-compose up --build
    ```
 
-The application will be available at http://localhost:8080
+The application will be available at http://localhost:8080/tickers
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
 

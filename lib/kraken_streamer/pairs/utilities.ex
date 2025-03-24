@@ -6,7 +6,9 @@ defmodule KrakenStreamer.Pairs.Utilities do
 
   require Logger
 
-  @batch_size Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Utilities)[:batch_size]
+  @batch_size Application.compile_env(:kraken_streamer, KrakenStreamer.Pairs.Utilities)[
+                :batch_size
+              ]
 
   @doc """
   Splits trading pairs into batches for efficient processing.

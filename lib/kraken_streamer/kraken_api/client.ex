@@ -8,7 +8,9 @@ defmodule KrakenStreamer.KrakenAPI.Client do
   alias KrakenStreamer.KrakenAPI.HTTPClient
   alias KrakenStreamer.Pairs.Utilities
 
-  @kraken_pairs_url Application.compile_env(:kraken_streamer, KrakenStreamer.KrakenAPI.Client)[:url]
+  @kraken_pairs_url Application.compile_env(:kraken_streamer, KrakenStreamer.KrakenAPI.Client)[
+                      :url
+                    ]
 
   @doc """
   Fetches available trading pairs from Kraken API.
@@ -20,7 +22,7 @@ defmodule KrakenStreamer.KrakenAPI.Client do
   """
   @spec fetch_pairs_from_api() :: {:ok, MapSet.t(String.t())} | {:error, String.t()}
   def fetch_pairs_from_api() do
-    Logger.debug("Fetching pairs from Kraken API: #{@kraken_pairs_url}")
+    Logger.info("Fetching pairs from Kraken API: #{@kraken_pairs_url}")
 
     case HTTPClient.get(@kraken_pairs_url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -47,10 +49,10 @@ defmodule KrakenStreamer.KrakenAPI.Client do
   @spec extract_ws_names(map()) :: MapSet.t(String.t())
   defp extract_ws_names(result) do
     result
-      |> Enum.map(fn {_key, pair_data} ->
-        pair_data["wsname"]
-      end)
-      |> Utilities.normalize_pairs()
-      |> MapSet.new()
+    |> Enum.map(fn {_key, pair_data} ->
+      pair_data["wsname"]
+    end)
+    |> Utilities.normalize_pairs()
+    |> MapSet.new()
   end
 end

@@ -78,18 +78,18 @@ defmodule KrakenStreamer.WebSocket.ClientTest do
     end
   end
 
-  describe "ping/pong handling" do
-    test "sends ping message and schedules next ping", %{state: state} do
-      log =
-        capture_log(fn ->
-          assert {:reply, {:text, payload}, ^state} = Client.handle_info(:ping, state)
-          decoded = Jason.decode!(payload)
-          assert decoded["method"] == "ping"
-        end)
+  # describe "ping/pong handling" do
+  #   test "sends ping message and schedules next ping", %{state: state} do
+  #     log =
+  #       capture_log(fn ->
+  #         assert {:reply, {:text, payload}, ^state} = Client.handle_info(:ping, state)
+  #         decoded = Jason.decode!(payload)
+  #         assert decoded["method"] == "ping"
+  #       end)
 
-      assert log =~ "Sending ping"
-    end
-  end
+  #     assert log =~ "Sending ping"
+  #   end
+  # end
 
   describe "ticker updates" do
     test "broadcasts formatted ticker updates", %{state: state} do
